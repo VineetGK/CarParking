@@ -14,13 +14,12 @@ int
 b[36]={102,194,110,152,153,184,137,113,55,138,104,43,240,255,203,8,100,53,88,
 64,127,64,87,5,2,144,211,128,10,89,27,11,175,185,157,241};
 int
-c[36]={159,243,133,253,233,228,141,18,46,195,75,52,253,204,169,30,78,94,68,11
-7,4,2,33,12,2,25,195,76,26,54,98,103,205,173,65,242};
+c[36]={159,243,133,253,233,228,141,18,46,195,75,52,253,204,169,30,78,94,68,117,4,2,33,12,2,25,195,76,26,54,98,103,205,173,65,242};
 void changeSize(int w, int h)
 {
-if(h == 0) // Prevent a divide by zero, when window is too
-short
- // (you cant make a window of zero width).
+// Prevent a divide by zero, when window is too short
+// (you cant make a window of zero width).
+if(h == 0)
 h = 1;
 ratio = 1.0f * w / h; // Reset the coordinate system before modifying
 
@@ -312,8 +311,7 @@ glTranslatef(1.68,0.0,0.0); //translate to 2nd tyre
 glutSolidTorus(0.12f, .14f, 10, 25);
 glTranslatef(0.0,0.0,-1.4); //translate to 3rd tyre
 glutSolidTorus(0.12f, .14f, 10, 25);
-glTranslatef(-1.68,0.0,0.0); //translate to 4th tyre which is behind 1st tyre
-rearback
+glTranslatef(-1.68,0.0,0.0); //translate to 4th tyre which is behind 1st tyre (rear back)
 glutSolidTorus(0.12f, .14f, 10, 25);
 glTranslatef(.58,.52,0.7); //translate to origin
 glRotatef(90.0,0.0,1.0,0.0);
@@ -605,14 +603,14 @@ return(houseDL);
 void initScene()
 {
 glEnable(GL_DEPTH_TEST);
+glClearColor(.7,0.85,1.0,1.0);
 carr_display_list = createDL();
 house_display_list= createDL2(); //***********
 }
 void renderScene(void)
 {
-int i,j;
+int i,j,k;
 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-glClearColor(.7,0.85,1.0,1.0);
 glColor3f(0.25f, 0.25f, 0.25f); // Draw ground
 glBegin(GL_QUADS);
 glVertex3f(-100.0f, 0.0f, -100.0f);
@@ -625,7 +623,8 @@ for( j=-3; j < 3; j++)
 {
 glPushMatrix();
 glTranslatef((i)*10.0,0,(j) * 10.0);
-glColor3ub(a[i],b[j],c[i]);
+k = (i+3)*6 + (j+3); // i,j run -3..2; map to 0..35
+glColor3ub(a[k],b[k],c[k]);
 glCallList(carr_display_list);
 glPopMatrix();
 }
@@ -665,26 +664,8 @@ glTranslatef(10.0,0.,0.0);
  glCallList(house_display_list);
  glPopMatrix();
 }
-if(fxincr!=0)
-theta1=(atan(fzincr/fxincr)*180)/3.141;
-else if(fzincr>0)
-theta1=-90.0;
-else theta1=90.0;
-if(fxincr>0&&fzincr<0)
-{
-theta1=-theta1;
-}
-else if(fxincr<0&&fzincr<0)
-{
-theta1=180-theta1;
-}
-else if(fxincr<0&&fzincr>0)
-{
-theta1=-180-theta1;
-}else if(fxincr>0&&fzincr>0)
-{
-theta1=-theta1;
-}
+// heading (degrees) of the movable car from its direction vector
+theta1=atan2(-fzincr,fxincr)*180.0/3.14159265358979;
 glPushMatrix();
 glTranslatef(fx,0,fz);
 glRotatef(theta1,0,1,0);
@@ -717,19 +698,34 @@ gluLookAt(x, y, z,x + lx,y + ly,z + lz,0.0f,1.0f,0.0f);
 }
 void processNormalKeys(unsigned char key, int x, int y)
 {
-glLoadIdentity();
 if (key == 'q')
 exit(0);
 if(key=='t')
+{
+ glLoadIdentity();
  gluLookAt(1,190,50,0,0 ,-10,0.0,1.0,.0);
+}
 if(key=='a')
- moveMeFlat(4);xxxx=1,yyyy=0;
+{
+ xxxx=1;yyyy=0;
+ moveMeFlat(4);
+}
 if(key=='s')
- moveMeFlat(-4);xxxx=1,yyyy=0;
+{
+ xxxx=1;yyyy=0;
+ moveMeFlat(-4);
+}
 if(key=='w')
- moveMeFlat(4);yyyy=1;xxxx=0;
+{
+ yyyy=1;xxxx=0;
+ moveMeFlat(4);
+}
 if(key=='d')
- moveMeFlat(-4);yyyy=1;xxxx=0;
+{
+ yyyy=1;xxxx=0;
+ moveMeFlat(-4);
+}
+glutPostRedisplay();
 }
 void inputKey(int key, int x, int y)
 {
@@ -737,9 +733,10 @@ switch (key)
 {
 case GLUT_KEY_LEFT : angle -= 0.05f;orientMe(angle);break;
 case GLUT_KEY_RIGHT : angle +=0.05f;orientMe(angle);break;
-case GLUT_KEY_UP : moveMeFlat(2);xxxx=0,yyyy=0;break;
-case GLUT_KEY_DOWN : moveMeFlat(-2);xxxx=0,yyyy=0;break;
+case GLUT_KEY_UP : xxxx=0;yyyy=0;moveMeFlat(2);break;
+case GLUT_KEY_DOWN : xxxx=0;yyyy=0;moveMeFlat(-2);break;
 }
+glutPostRedisplay();
 }
 void movecar(int key, int x, int y)
 {
@@ -752,8 +749,7 @@ case GLUT_KEY_LEFT :temp=fxincr;
  fz+=fzincr;
  break;
 case GLUT_KEY_RIGHT :temp=fxincr;
- fxincr=fxincr*cos(-theta)+fzincr*sin(-
-theta);
+ fxincr=fxincr*cos(-theta)+fzincr*sin(-theta);
  fzincr=-temp*sin(-theta)+fzincr*cos(-theta);
  fx+=fxincr;
  fz+=fzincr;
@@ -765,8 +761,7 @@ case GLUT_KEY_DOWN :fx-=fxincr;
 }
 glutPostRedisplay();
 }
-void ProcessMenu(int value) // Reset flags as appropriate in response to menu
-selections
+void ProcessMenu(int value) // Reset flags as appropriate in response to menu selections
 {
  glutPostRedisplay();
 }
@@ -827,7 +822,7 @@ glutKeyboardFunc(processNormalKeys);
 glutSpecialFunc(inputKey);
  menu();
 glutDisplayFunc(renderScene);
-glutIdleFunc(renderScene);
+// no idle callback: input handlers call glutPostRedisplay() instead of redrawing in a busy loop
 glutReshapeFunc(changeSize);
 glutMainLoop();
 return(0);
